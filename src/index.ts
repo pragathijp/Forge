@@ -2,10 +2,12 @@ import express from 'express';
 import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
+import healthRouter from './routes/health';
 
 const app = express();
 
 app.use(requestLogger);
+app.use(healthRouter);
 
 app.get('/ping', (req, res) => {
   res.status(200).json({ status: 'ok' });
