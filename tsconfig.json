@@ -13,5 +13,6 @@
     "skipLibCheck": true,
     "moduleDetection": "force",
     "resolveJsonModule": true
-  }
+  },
+  "exclude": ["node_modules", "dist", "prisma.config.ts"]
 }
