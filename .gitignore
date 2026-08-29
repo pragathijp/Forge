@@ -6,3 +6,10 @@ dist/
 !.env.example
 *.log
 "@ | Out-File -Encoding utf8 .gitignore
+/src/generated/prisma
+
+# Prisma-generated AI agent skill docs (not part of the project)
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
