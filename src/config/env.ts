@@ -7,6 +7,8 @@ dotenv.config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(8080),
+  JWT_ACCESS_SECRET: z.string().min(32),
+  JWT_REFRESH_SECRET: z.string().min(32),
 });
 
 // This throws immediately if validation fails — that's the "fail fast" behavior we want.
