@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/requireAuth';
 import { createTaskSchema, updateTaskSchema } from '../dto/taskDto';
 import { findTaskByIdForOrg, findAllTasksForOrg } from '../repositories/taskRepository';
 import { findProjectByIdForOrg } from '../repositories/projectRepository';
-import { isCreatorOrAdmin } from '../utils/permissions';
+import { isCreatorOrAdmin, isAssigneeOrAdmin } from '../utils/permissions';
 import { ValidationError, NotFoundError, ForbiddenError } from '../utils/errors';
 
 const router = Router();
@@ -68,8 +68,8 @@ router.patch('/:id', async (req, res) => {
     throw new NotFoundError('Task not found');
   }
 
-  if (!isCreatorOrAdmin(existing, req.user!)) {
-    throw new ForbiddenError('Only the task creator or an admin can update this task');
+  if (!isAssigneeOrAdmin(existing, req.user!)) {
+    throw new ForbiddenError('Only the task assignee or an admin can update this task');
   }
 
   const { dueDate, ...rest } = parsed.data;
