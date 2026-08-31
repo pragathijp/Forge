@@ -7,6 +7,7 @@ import { requestLogger } from './middleware/requestLogger';
 import healthRouter from './routes/health';
 import authRouter from './routes/auth';
 import projectsRouter from './routes/projects';
+import tasksRouter from './routes/tasks';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(passport.initialize());
 app.use(healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/projects', projectsRouter);
+app.use('/api/tasks', tasksRouter);
 
 app.get('/ping', (req, res) => {
   res.status(200).json({ status: 'ok' });
