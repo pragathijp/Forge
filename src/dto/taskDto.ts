@@ -16,6 +16,7 @@ export const updateTaskSchema = z.object({
   status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE']).optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: z.string().datetime().nullable().optional(),
+  version: z.number().int().nonnegative(),
 });
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;

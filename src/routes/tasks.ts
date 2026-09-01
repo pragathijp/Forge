@@ -5,7 +5,8 @@ import { createTaskSchema, updateTaskSchema } from '../dto/taskDto';
 import { findTaskByIdForOrg, findAllTasksForOrg } from '../repositories/taskRepository';
 import { findProjectByIdForOrg } from '../repositories/projectRepository';
 import { isCreatorOrAdmin, isAssigneeOrAdmin } from '../utils/permissions';
-import { ValidationError, NotFoundError, ForbiddenError } from '../utils/errors';
+
+import { ValidationError, NotFoundError, ForbiddenError, ConflictError } from '../utils/errors';
 
 const router = Router();
 
@@ -72,15 +73,22 @@ router.patch('/:id', async (req, res) => {
     throw new ForbiddenError('Only the task assignee or an admin can update this task');
   }
 
-  const { dueDate, ...rest } = parsed.data;
+    const { dueDate, version, ...rest } = parsed.data;
 
-  const task = await prisma.task.update({
-    where: { id: req.params.id },
+  const result = await prisma.task.updateMany({
+    where: { id: req.params.id, version },
     data: {
       ...rest,
       ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
+      version: { increment: 1 },
     },
   });
+
+  if (result.count === 0) {
+    throw new ConflictError('Task was modified by someone else — please reload and try again');
+  }
+
+  const task = await prisma.task.findUnique({ where: { id: req.params.id } });
 
   res.status(200).json(task);
 });
