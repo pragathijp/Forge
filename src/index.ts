@@ -8,6 +8,7 @@ import healthRouter from './routes/health';
 import authRouter from './routes/auth';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/tasks';
+import { connectRedis } from './config/redis';
 
 const app = express();
 
@@ -27,6 +28,13 @@ app.get('/ping', (req, res) => {
 
 app.use(errorHandler);
 
-app.listen(env.PORT, () => {
-  console.log(`Server running on port ${env.PORT} (${env.NODE_ENV})`);
-});
+connectRedis()
+  .then(() => {
+    app.listen(env.PORT, () => {
+      console.log(`Server running on port ${env.PORT} (${env.NODE_ENV})`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to connect to Redis:', err);
+    process.exit(1);
+  });

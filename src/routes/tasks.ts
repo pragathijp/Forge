@@ -5,14 +5,15 @@ import { createTaskSchema, updateTaskSchema } from '../dto/taskDto';
 import { findTaskByIdForOrg, findAllTasksForOrg } from '../repositories/taskRepository';
 import { findProjectByIdForOrg } from '../repositories/projectRepository';
 import { isCreatorOrAdmin, isAssigneeOrAdmin } from '../utils/permissions';
-
 import { ValidationError, NotFoundError, ForbiddenError, ConflictError } from '../utils/errors';
+import { idempotency } from '../middleware/idempotency';
+import { Request } from 'express';
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.post('/', async (req, res) => {
+router.post('/', idempotency, async (req: Request, res) => {
   const parsed = createTaskSchema.safeParse(req.body);
   if (!parsed.success) {
     throw new ValidationError('Invalid task data', parsed.error.format());
@@ -57,7 +58,7 @@ router.get('/:id', async (req, res) => {
   res.status(200).json(task);
 });
 
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', idempotency, async (req: Request<{ id: string }>, res) => {
   const parsed = updateTaskSchema.safeParse(req.body);
   if (!parsed.success) {
     throw new ValidationError('Invalid task data', parsed.error.format());

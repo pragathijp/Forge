@@ -9,6 +9,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8080),
   JWT_ACCESS_SECRET: z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),
+  REDIS_URL: z.string().default('redis://localhost:6379'),
 });
 
 // This throws immediately if validation fails — that's the "fail fast" behavior we want.
