@@ -2,7 +2,7 @@ import { Router, Request } from 'express';
 import { prisma } from '../config/prisma';
 import { requireAuth } from '../middleware/requireAuth';
 import { createTaskSchema, updateTaskSchema } from '../dto/taskDto';
-import { findTaskByIdForOrg, findAllTasksForOrg, findTaskPositionNeighbors } from '../repositories/taskRepository';
+import { findTaskByIdForOrg, findAllTasksForOrg, findTaskPositionNeighbors, renumberColumnIfNeeded } from '../repositories/taskRepository';
 import { findProjectByIdForOrg } from '../repositories/projectRepository';
 import { isCreatorOrAdmin, isAssigneeOrAdmin } from '../utils/permissions';
 import { ValidationError, NotFoundError, ForbiddenError, ConflictError } from '../utils/errors';
@@ -28,6 +28,7 @@ router.post('/', idempotency, async (req: Request, res) => {
 
   const { prev, next } = await findTaskPositionNeighbors(projectId, 'TODO', insertAfterTaskId);
   const position = computePosition(prev?.position ?? null, next?.position ?? null);
+  await renumberColumnIfNeeded(projectId, 'TODO', position, prev?.position ?? next?.position ?? null);
 
   const task = await prisma.task.create({
     data: {

@@ -17,7 +17,6 @@ export async function findTaskPositionNeighbors(
   insertAfterTaskId: string | null | undefined
 ) {
   if (insertAfterTaskId === undefined) {
-    // No insertion point specified — insert at the end of the column
     const last = await prisma.task.findFirst({
       where: { projectId, status },
       orderBy: { position: 'desc' },
@@ -26,7 +25,6 @@ export async function findTaskPositionNeighbors(
   }
 
   if (insertAfterTaskId === null) {
-    // Insert at the very start of the column
     const first = await prisma.task.findFirst({
       where: { projectId, status },
       orderBy: { position: 'asc' },
@@ -34,7 +32,6 @@ export async function findTaskPositionNeighbors(
     return { prev: null, next: first };
   }
 
-  // Insert after a specific task
   const prev = await prisma.task.findUnique({ where: { id: insertAfterTaskId } });
   if (!prev) return { prev: null, next: null };
 
@@ -44,4 +41,36 @@ export async function findTaskPositionNeighbors(
   });
 
   return { prev, next };
+}
+
+const POSITION_EPSILON = 0.001;
+
+export async function renumberColumnIfNeeded(
+  projectId: string,
+  status: TaskStatus,
+  candidatePosition: number,
+  neighborPosition: number | null
+) {
+  if (neighborPosition === null) {
+    return;
+  }
+
+  const gap = Math.abs(candidatePosition - neighborPosition);
+  if (gap >= POSITION_EPSILON) {
+    return;
+  }
+
+  const tasksInColumn = await prisma.task.findMany({
+    where: { projectId, status },
+    orderBy: { position: 'asc' },
+  });
+
+  await prisma.$transaction(
+    tasksInColumn.map((task, index) =>
+      prisma.task.update({
+        where: { id: task.id },
+        data: { position: (index + 1) * 1000 },
+      })
+    )
+  );
 }

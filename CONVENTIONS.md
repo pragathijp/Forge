@@ -34,3 +34,16 @@ another organization's data.
 - No previous neighbor (inserting at start): `nextPosition / 2` (or `nextPosition - 1000` if `nextPosition` is already very small)
 - No next neighbor (inserting at end): `prevPosition + 1000`
 - Empty column: default starting position `1000`
+
+## Known Accepted Vulnerability — mysql2 (via Prisma)
+
+`npm audit` flags `mysql2` (2 CVEs, high/moderate severity) as a transitive dependency of
+Prisma. This is accepted as a non-issue: Forge is Postgres-only, connecting exclusively via
+`@prisma/adapter-pg`. `mysql2` is never imported or executed anywhere in this codebase — it's
+an unused optional driver Prisma bundles regardless of which database you actually use.
+
+`npm audit fix --force` would resolve this by downgrading Prisma to `6.19.3`, a breaking
+change we're not taking for a vulnerability with zero real exposure. To be revisited only if
+Prisma ships a fix that doesn't require a downgrade.
+
+
