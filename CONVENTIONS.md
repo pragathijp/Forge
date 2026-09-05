@@ -11,3 +11,26 @@ Always go through a repository helper function that takes `organizationId` expli
 
 This prevents a request from one organization ever accidentally reading or modifying
 another organization's data.
+
+## Position Field & Fractional Ordering (Task 2.5)
+
+`Task.position` is a `Float`, not `Decimal`. This is a deliberate choice, not an oversight:
+
+- **Float** is simpler and faster for the common case — native JS/Postgres double-precision
+  comparisons, no external decimal library needed, and it's what the index on
+  `[projectId, status, position]` is built against.
+- **The tradeoff:** repeatedly inserting between the same two neighbors converges toward
+  floating-point precision limits over many insertions, since each insert computes a
+  midpoint that gets closer and closer to its neighbors.
+- **This tradeoff is intentionally mitigated, not avoided upfront** — Task 2.6 implements
+  epsilon-detection and a renumbering pass specifically to reset position values to clean,
+  evenly-spaced numbers once the gap between neighbors gets too small to safely subdivide.
+  Decimal would have avoided this problem entirely but at the cost of complexity and
+  performance on every read/write; Float + periodic renumbering was chosen as the simpler,
+  faster default with a known, bounded failure mode that's explicitly handled elsewhere.
+
+**Insertion logic:** new task position = midpoint of its neighbors' positions.
+- Both neighbors exist: `(prevPosition + nextPosition) / 2`
+- No previous neighbor (inserting at start): `nextPosition / 2` (or `nextPosition - 1000` if `nextPosition` is already very small)
+- No next neighbor (inserting at end): `prevPosition + 1000`
+- Empty column: default starting position `1000`

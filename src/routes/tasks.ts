@@ -1,16 +1,15 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
 import { prisma } from '../config/prisma';
 import { requireAuth } from '../middleware/requireAuth';
 import { createTaskSchema, updateTaskSchema } from '../dto/taskDto';
-import { findTaskByIdForOrg, findAllTasksForOrg } from '../repositories/taskRepository';
+import { findTaskByIdForOrg, findAllTasksForOrg, findTaskPositionNeighbors } from '../repositories/taskRepository';
 import { findProjectByIdForOrg } from '../repositories/projectRepository';
 import { isCreatorOrAdmin, isAssigneeOrAdmin } from '../utils/permissions';
 import { ValidationError, NotFoundError, ForbiddenError, ConflictError } from '../utils/errors';
 import { idempotency } from '../middleware/idempotency';
-import { Request } from 'express';
+import { computePosition } from '../utils/position';
 
 const router = Router();
-
 router.use(requireAuth);
 
 router.post('/', idempotency, async (req: Request, res) => {
@@ -19,13 +18,16 @@ router.post('/', idempotency, async (req: Request, res) => {
     throw new ValidationError('Invalid task data', parsed.error.format());
   }
 
-  const { projectId, title, description, assigneeId, priority, dueDate } = parsed.data;
+  const { projectId, title, description, assigneeId, priority, dueDate, insertAfterTaskId } = parsed.data;
   const organizationId = req.user!.organizationId;
 
   const project = await findProjectByIdForOrg(projectId, organizationId);
   if (!project) {
     throw new NotFoundError('Project not found');
   }
+
+  const { prev, next } = await findTaskPositionNeighbors(projectId, 'TODO', insertAfterTaskId);
+  const position = computePosition(prev?.position ?? null, next?.position ?? null);
 
   const task = await prisma.task.create({
     data: {
@@ -36,7 +38,7 @@ router.post('/', idempotency, async (req: Request, res) => {
       priority,
       dueDate: dueDate ? new Date(dueDate) : undefined,
       creatorId: req.user!.userId,
-      position: 0,
+      position,
     },
   });
 
