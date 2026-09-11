@@ -4,6 +4,7 @@ import { hashPassword, comparePassword } from '../utils/password';
 import { generateAccessToken, generateRefreshToken, rotateRefreshToken } from '../services/tokenService';
 import { registerSchema, loginSchema } from '../dto/authDto';
 import { ValidationError, UnauthorizedError, ConflictError } from '../utils/errors';
+import { requireAuth } from '../middleware/requireAuth';
 
 const router = Router();
 
@@ -90,6 +91,14 @@ router.post('/logout', async (req, res) => {
   }
   res.clearCookie('refreshToken');
   res.status(200).json({ message: 'Logged out' });
+});
+
+router.get('/me', requireAuth, async (req, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+  if (!user) {
+    throw new UnauthorizedError('User not found');
+  }
+  res.status(200).json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
 });
 
 export default router;
