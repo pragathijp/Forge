@@ -77,12 +77,22 @@ router.patch('/:id', idempotency, async (req: Request<{ id: string }>, res) => {
     throw new ForbiddenError('Only the task assignee or an admin can update this task');
   }
 
-    const { dueDate, version, ...rest } = parsed.data;
+      const { dueDate, version, insertAfterTaskId, ...rest } = parsed.data;
+
+  let positionUpdate = {};
+  if (insertAfterTaskId !== undefined) {
+    const targetStatus = parsed.data.status ?? existing.status;
+    const { prev, next } = await findTaskPositionNeighbors(existing.projectId, targetStatus, insertAfterTaskId);
+    const position = computePosition(prev?.position ?? null, next?.position ?? null);
+    await renumberColumnIfNeeded(existing.projectId, targetStatus, position, prev?.position ?? next?.position ?? null);
+    positionUpdate = { position };
+  }
 
   const result = await prisma.task.updateMany({
     where: { id: req.params.id, version },
     data: {
       ...rest,
+      ...positionUpdate,
       ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
       version: { increment: 1 },
     },
