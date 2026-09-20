@@ -7,8 +7,13 @@ export async function findTaskByIdForOrg(id: string, organizationId: string) {
   });
 }
 
-export function findAllTasksForOrg(organizationId: string) {
-  return prisma.task.findMany({ where: { project: { organizationId } } });
+export function findAllTasksForOrg(organizationId: string, projectId?: string) {
+  return prisma.task.findMany({
+    where: {
+      project: { organizationId },
+      ...(projectId ? { projectId } : {}),
+    },
+  });
 }
 
 export async function findTaskPositionNeighbors(

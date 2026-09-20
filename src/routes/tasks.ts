@@ -48,7 +48,8 @@ router.post('/', idempotency, async (req: Request, res) => {
 
 router.get('/', async (req, res) => {
   const organizationId = req.user!.organizationId;
-  const tasks = await findAllTasksForOrg(organizationId);
+  const projectId = typeof req.query.projectId === 'string' ? req.query.projectId : undefined;
+  const tasks = await findAllTasksForOrg(organizationId, projectId);
   res.status(200).json(tasks);
 });
 
