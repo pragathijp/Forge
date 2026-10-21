@@ -14,5 +14,5 @@
     "moduleDetection": "force",
     "resolveJsonModule": true
   },
-  "exclude": ["node_modules", "dist", "prisma.config.ts"]
+  "exclude": ["node_modules", "dist", "prisma.config.ts", "vitest.config.ts"]
 }
